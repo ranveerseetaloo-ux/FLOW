@@ -1,0 +1,36 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: pipecore
+      POSTGRES_PASSWORD: pipecore
+      POSTGRES_DB: pipecore
+    ports: ["5432:5432"]
+    volumes: ["pgdata:/var/lib/postgresql/data"]
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:24-alpine
+    ports: ["8123:8123", "9000:9000"]
+    volumes:
+      - "chdata:/var/lib/clickhouse"
+      - "./reporting/clickhouse/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro"
+    ulimits:
+      nofile: { soft: 262144, hard: 262144 }
+
+  control-plane:
+    build: ./control-plane
+    depends_on: [postgres, clickhouse]
+    environment:
+      PIPECORE_DB: postgresql+psycopg2://pipecore:pipecore@postgres:5432/pipecore
+      PIPECORE_CLICKHOUSE: clickhouse://clickhouse:9000/pipecore
+      PIPECORE_JWT_SECRET: change-me
+      PIPECORE_DRY_RUN: "true"
+    ports: ["8000:8000"]
+    # mounts the whole repo so it can import the shared data-plane package
+    volumes: ["./:/app"]
+    working_dir: /app/control-plane
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+
+volumes:
+  pgdata:
+  chdata:

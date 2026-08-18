@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>VectraOne-Flow — Licensing</title>
+<style>
+  :root{--navy:#1f3864;--blue:#2e5496;--accent:#3b7dd8;--bg:#f4f6fb;--card:#fff;
+    --line:#e2e8f2;--ink:#20293a;--muted:#6b7690;--ok:#2f8a57;--ok-bg:#e3f3ea;
+    --bad:#c0392b;--bad-bg:#fbe6e3;--warn:#b9791b;--warn-bg:#fbeede;}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--ink)}
+  header{background:var(--navy);color:#fff;padding:16px 24px;display:flex;gap:12px;align-items:center}
+  header h1{font-size:18px;margin:0;font-weight:650}
+  header .tag{font-size:12px;color:#b9c6e6;border:1px solid #3a4f7a;padding:2px 9px;border-radius:20px}
+  header a{margin-left:auto;color:#cdd8ee;font-size:13px}
+  .wrap{max-width:960px;margin:22px auto;padding:0 18px;display:grid;gap:18px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 20px}
+  .card h2{margin:0 0 14px;font-size:13px;text-transform:uppercase;letter-spacing:.6px;color:var(--blue)}
+  .status{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+  .pill{font-size:13px;font-weight:700;padding:4px 12px;border-radius:20px}
+  .pill.ok{background:var(--ok-bg);color:var(--ok)} .pill.bad{background:var(--bad-bg);color:var(--bad)}
+  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  td{padding:8px 6px;border-bottom:1px solid var(--line)}
+  td.k{color:var(--muted);width:230px}
+  td.v{font-weight:600}
+  .exp-soon{color:var(--warn)} .exp-bad{color:var(--bad);font-weight:700}
+  .tiergrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-top:6px}
+  .tier{border:1px solid var(--line);border-radius:9px;padding:8px 10px;font-size:13px}
+  .tier b{color:var(--navy)} .tier span{color:var(--muted);font-size:11.5px}
+  textarea{width:100%;min-height:90px;font-family:ui-monospace,Consolas,monospace;font-size:11.5px;
+    border:1px solid var(--line);border-radius:9px;padding:10px}
+  input{padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:13px}
+  button{background:var(--blue);color:#fff;border:0;padding:9px 16px;border-radius:8px;font-size:13px;cursor:pointer}
+  button:hover{background:var(--accent)}
+  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+  .msg{font-size:13px;margin-top:8px}.msg.ok{color:var(--ok)}.msg.bad{color:var(--bad)}
+  .hostbox{font-family:ui-monospace,monospace;background:#eef2f9;padding:3px 8px;border-radius:6px;color:var(--blue)}
+</style>
+</head>
+<body>
+<header>
+  <h1>VectraOne-Flow</h1><span class="tag">Licensing</span>
+  <a href="index.html">← Dashboard</a>
+</header>
+
+<div class="wrap">
+  <div class="card">
+    <h2>License Status</h2>
+    <div class="status">
+      <span id="pill" class="pill">…</span>
+      <span id="reason" class="muted"></span>
+    </div>
+    <table id="details"></table>
+  </div>
+
+  <div class="card">
+    <h2>Available Packages (annual)</h2>
+    <div class="tiergrid" id="tiers"></div>
+    <p class="muted" style="font-size:12px;margin-top:10px">
+      Each tier is an annual license including vendor Standard support (24/7/365,
+      6-hour response) and all updates and releases. Deep Packet Inspection is a
+      separate add-on enabled per license.
+    </p>
+  </div>
+
+  <div class="card">
+    <h2>Install / Renew License</h2>
+    <p class="muted" style="font-size:13px">
+      Give your vendor this node's <b>Host ID</b>:
+      <span class="hostbox" id="hostid">…</span>. They will issue a license file
+      bound to it. Paste the license text below and upload.
+    </p>
+    <div class="row">
+      <input id="u" placeholder="admin username" value="admin"/>
+      <input id="p" type="password" placeholder="password"/>
+    </div>
+    <textarea id="lic" placeholder="Paste license key here (one long line: xxxx.yyyy)"></textarea>
+    <div class="row" style="margin-top:10px"><button onclick="upload()">Upload License</button></div>
+    <div id="msg" class="msg"></div>
+  </div>
+</div>
+
+<script>
+const API_BASE = "http://197.242.184.113:8000";   // your server; blank "" if served by backend
+const API = (API_BASE || location.origin) + "/api";
+let TOKEN = null;
+
+async function loadStatus(){
+  const d = await (await fetch(API+"/license")).json();
+  const pill = document.getElementById("pill");
+  pill.textContent = d.licensed ? "LICENSED" : "NOT LICENSED";
+  pill.className = "pill " + (d.licensed ? "ok" : "bad");
+  document.getElementById("reason").textContent = d.licensed ? "" : (d.reason||"");
+  document.getElementById("hostid").textContent = d.host_id || "unknown";
+
+  const expClass = d.days_left<0 ? "exp-bad" : (d.days_left<30 ? "exp-soon" : "");
+  const rows = [
+    ["Licensed", d.licensed ? "✔ Yes" : "✘ No"],
+    ["Licensee", d.licensee||"—"],
+    ["Host ID", d.host_id||"—"],
+    ["Model", d.model||"—"],
+    ["Package / Tier", d.tier ? (d.tier+" tier") : "—"],
+    ["Max Bandwidth", d.max_mbps ? (d.max_mbps.toLocaleString()+" Mbps") : "—"],
+    ["Deep Packet Inspection", d.dpi ? "✔ Included" : "Not included"],
+    ["Support", d.support||"—"],
+    ["Issued", d.issued||"—"],
+    ["Expiry", `<span class="${expClass}">${d.expires||"—"}${d.days_left>=0?` (${d.days_left} days left)`:" (EXPIRED)"}</span>`],
+    ["Serial", d.serial||"—"],
+    ["Enforcement", d.enforced ? "On (blocks when unlicensed)" : "Off (dev)"],
+  ];
+  document.getElementById("details").innerHTML =
+    rows.map(([k,v])=>`<tr><td class="k">${k}</td><td class="v">${v}</td></tr>`).join("");
+
+  const t = document.getElementById("tiers");
+  t.innerHTML = Object.entries(d.tiers||{}).map(([k,v])=>
+    `<div class="tier"><b>${k} tier</b><br><span>${v.toLocaleString()} Mbps · annual + Standard support</span></div>`).join("");
+}
+
+async function upload(){
+  const msg = document.getElementById("msg"); msg.textContent="";
+  try{
+    const body = new URLSearchParams({username:u.value, password:p.value});
+    const tr = await fetch(API+"/auth/token",{method:"POST",body});
+    if(!tr.ok){ msg.className="msg bad"; msg.textContent="Login failed — check admin password."; return; }
+    TOKEN = (await tr.json()).access_token;
+    const r = await fetch(API+"/license/upload",{method:"POST",
+      headers:{"Authorization":"Bearer "+TOKEN,"Content-Type":"application/json"},
+      body:JSON.stringify({license:document.getElementById("lic").value})});
+    const d = await r.json();
+    if(!r.ok){ msg.className="msg bad"; msg.textContent="Rejected: "+(d.detail||"invalid license"); return; }
+    msg.className="msg ok"; msg.textContent="License installed ✔"; loadStatus();
+  }catch(e){ msg.className="msg bad"; msg.textContent="Error: "+e; }
+}
+loadStatus();
+</script>
+</body>
+</html>

@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>VectraOne-Flow — Interfaces</title>
+<style>
+  :root{--navy:#1f3864;--blue:#2e5496;--accent:#3b7dd8;--bg:#f4f6fb;--card:#fff;
+    --line:#e2e8f2;--ink:#20293a;--muted:#6b7690;--ok:#2f8a57;}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--ink)}
+  header{background:var(--navy);color:#fff;padding:16px 24px;display:flex;gap:12px;align-items:center}
+  header h1{font-size:18px;margin:0;font-weight:650}
+  header .tag{font-size:12px;color:#b9c6e6;border:1px solid #3a4f7a;padding:2px 9px;border-radius:20px}
+  header a{margin-left:auto;color:#cdd8ee;font-size:13px}
+  .wrap{max-width:1040px;margin:22px auto;padding:0 18px;display:grid;gap:18px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 20px}
+  .card h2{margin:0 0 14px;font-size:13px;text-transform:uppercase;letter-spacing:.6px;color:var(--blue)}
+  .if{border:1px solid var(--line);border-radius:11px;padding:14px 16px;margin-bottom:12px;background:#fbfcfe}
+  .if .hd{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+  .if .name{font-weight:700;font-size:15px;color:var(--navy);font-family:ui-monospace,monospace}
+  .if .meta{font-size:12px;color:var(--muted)}
+  .grid{display:grid;grid-template-columns:130px 1fr;gap:8px 14px;align-items:center;font-size:13px}
+  .grid label{color:var(--muted)}
+  input,select{padding:7px 9px;border:1px solid var(--line);border-radius:8px;font-size:13px;background:#fff}
+  input[type=text]{width:100%}
+  .addrs input{margin-bottom:5px}
+  .state{font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px}
+  .up{background:#e3f3ea;color:var(--ok)} .down{background:#f0f0f3;color:var(--muted)}
+  .bridgebadge{background:#eaf0fa;color:var(--blue);font-size:11px;padding:2px 8px;border-radius:20px}
+  button{background:var(--blue);color:#fff;border:0;padding:9px 16px;border-radius:8px;font-size:13px;cursor:pointer}
+  button.ghost{background:#eaf0fa;color:var(--blue)}
+  button:hover{background:var(--accent)}
+  .gwrow{display:grid;grid-template-columns:130px 1fr;gap:8px 14px;align-items:center;font-size:13px;max-width:520px}
+  pre{background:#0f1830;color:#cfe0ff;padding:12px;border-radius:9px;font-size:11.5px;overflow:auto;max-height:260px}
+  .msg{font-size:13px;margin-top:8px}.msg.ok{color:var(--ok)}
+  .diagram{display:flex;gap:8px;align-items:flex-end;margin-bottom:6px;flex-wrap:wrap}
+  .port{width:74px;text-align:center;font-size:11px;color:var(--muted)}
+  .port .box{height:34px;border:2px solid #9db4d8;border-radius:6px;background:#dfe8f6;margin-bottom:3px;display:flex;align-items:center;justify-content:center;font-family:ui-monospace,monospace;font-size:11px;color:var(--navy)}
+  .port.bridge .box{border-color:var(--accent);background:#cfe0ff}
+</style>
+</head>
+<body>
+<header>
+  <h1>VectraOne-Flow</h1><span class="tag">Interfaces</span>
+  <a href="index.html">← Dashboard</a>
+</header>
+
+<div class="wrap">
+  <div class="card">
+    <h2>Interface Settings</h2>
+    <div class="diagram" id="diagram"></div>
+    <div id="ifs"></div>
+  </div>
+
+  <div class="card">
+    <h2>Gateway Settings</h2>
+    <div class="gwrow">
+      <label>IPv4 gateway</label><input type="text" id="gw4" placeholder="192.168.0.1"/>
+      <label>IPv6 gateway</label><input type="text" id="gw6" placeholder="optional"/>
+      <label>Bridge name</label><input type="text" id="brname" value="br0"/>
+    </div>
+    <div class="row" style="margin-top:14px">
+      <button onclick="apply()">Preview / Apply Changes</button>
+      <span class="muted" style="font-size:12px;margin-left:8px">Changes are saved and the exact commands shown below (safe preview).</span>
+    </div>
+    <div id="msg" class="msg"></div>
+    <pre id="cmds" style="margin-top:12px;display:none"></pre>
+  </div>
+</div>
+
+<script>
+const API_BASE = "http://197.242.184.113:8000";   // your server; blank "" if served by backend
+const API = (API_BASE || location.origin) + "/api";
+let TOKEN = null, ROLES=[], SPEEDS=[];
+
+async function ensureToken(){
+  if(TOKEN) return TOKEN;
+  const pw = prompt("Admin password (to apply interface changes):","");
+  const body = new URLSearchParams({username:"admin", password:pw||""});
+  const r = await fetch(API+"/auth/token",{method:"POST",body});
+  if(!r.ok){ alert("Login failed"); throw new Error("auth"); }
+  TOKEN = (await r.json()).access_token; return TOKEN;
+}
+
+function speedLabel(mbps){ if(!mbps||mbps<0) return "—"; return mbps>=1000 ? (mbps/1000)+"G" : mbps+"M"; }
+
+async function load(){
+  const d = await (await fetch(API+"/interfaces")).json();
+  ROLES=d.roles; SPEEDS=d.port_speeds;
+  const cfg = (d.config&&d.config.interfaces)||[];
+  const cfgByName = Object.fromEntries(cfg.map(c=>[c.name,c]));
+  const det = d.detected.length ? d.detected :
+    [{name:"eth0",mac:"—",state:"unknown",speed_mbps:null,addresses:[],is_bridge:false}];
+
+  // little port diagram
+  document.getElementById("diagram").innerHTML = det.slice(0,8).map(i=>{
+    const c=cfgByName[i.name]||{}; const isBr=(c.role||"").startsWith("bridge");
+    return `<div class="port ${isBr?'bridge':''}"><div class="box">${i.name}</div>${(c.role||i.state)}</div>`;
+  }).join("");
+
+  document.getElementById("ifs").innerHTML = det.map(i=>{
+    const c=cfgByName[i.name]||{};
+    const roleOpts = ROLES.map(r=>`<option ${c.role===r?'selected':''}>${r}</option>`).join("");
+    const spOpts = ['<option value="">auto</option>'].concat(
+      SPEEDS.map(s=>`<option ${c.speed===s?'selected':''}>${s}</option>`)).join("");
+    const addrs = (c.addresses&&c.addresses.length?c.addresses:["",""]).concat([""]).slice(0,3);
+    return `<div class="if" data-name="${i.name}">
+      <div class="hd">
+        <span class="name">${i.name}</span>
+        <span class="state ${i.state==='up'?'up':'down'}">${i.state}</span>
+        ${i.is_bridge?'<span class="bridgebadge">bridge</span>':''}
+        <span class="meta">MAC ${i.mac} · link ${speedLabel(i.speed_mbps)} · ${i.addresses.join(", ")||"no address"}</span>
+      </div>
+      <div class="grid">
+        <label>Role</label><select class="f-role">${roleOpts}</select>
+        <label>Port speed</label><select class="f-speed">${spOpts}</select>
+        <label>DHCP (IPv4)</label><span><input type="checkbox" class="f-dhcp" ${c.dhcp4?'checked':''}/> obtain automatically</span>
+        <label>Static addresses</label>
+        <div class="addrs">${addrs.map(a=>`<input type="text" class="f-addr" value="${a}" placeholder="192.168.0.161/24"/>`).join("")}</div>
+        <label>Comment</label><input type="text" class="f-comment" value="${c.comment||''}" placeholder="e.g. Management / WAN"/>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+function collect(){
+  const ifs=[...document.querySelectorAll(".if")].map(el=>({
+    name: el.dataset.name,
+    role: el.querySelector(".f-role").value,
+    speed: el.querySelector(".f-speed").value || null,
+    dhcp4: el.querySelector(".f-dhcp").checked,
+    addresses: [...el.querySelectorAll(".f-addr")].map(i=>i.value.trim()).filter(Boolean),
+    comment: el.querySelector(".f-comment").value,
+  }));
+  return {interfaces:ifs, gateway4:gw4.value.trim(), gateway6:gw6.value.trim(),
+          bridge_name:brname.value.trim()||"br0", apply:false};
+}
+
+async function apply(){
+  const msg=document.getElementById("msg"); msg.textContent="";
+  try{
+    await ensureToken();
+    const r = await fetch(API+"/interfaces/apply",{method:"POST",
+      headers:{"Authorization":"Bearer "+TOKEN,"Content-Type":"application/json"},
+      body:JSON.stringify(collect())});
+    const d = await r.json();
+    if(!r.ok){ msg.textContent="Error: "+(d.detail||"failed"); return; }
+    msg.className="msg ok"; msg.textContent="Saved ✔  Commands that will run on the node:";
+    const pre=document.getElementById("cmds"); pre.style.display="block";
+    pre.textContent=(d.commands||[]).join("\n");
+  }catch(e){ msg.textContent="Error: "+e; }
+}
+load();
+</script>
+</body>
+</html>

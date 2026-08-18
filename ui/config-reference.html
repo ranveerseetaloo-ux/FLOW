@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>VectraOne-Flow — Configuration Reference</title>
+<style>
+  :root{
+    --navy:#1f3864; --blue:#2e5496; --accent:#3b7dd8; --bg:#f4f6fb; --card:#fff;
+    --line:#e2e8f2; --ink:#20293a; --muted:#6b7690;
+    --ok:#2f8a57; --ok-bg:#e3f3ea; --part:#b9791b; --part-bg:#fbeede;
+    --plan:#5a49a8; --plan-bg:#ece9fb;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--ink);line-height:1.5}
+  a{color:var(--blue);text-decoration:none}
+  a:hover{text-decoration:underline}
+  header{background:var(--navy);color:#fff;padding:20px 26px}
+  header .top{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  header h1{font-size:20px;margin:0;font-weight:650}
+  header .tag{font-size:12px;color:#b9c6e6;border:1px solid #3a4f7a;padding:2px 9px;border-radius:20px}
+  header p{margin:10px 0 0;color:#cdd8ee;font-size:13.5px;max-width:820px}
+  .layout{display:grid;grid-template-columns:230px 1fr;gap:0;max-width:1180px;margin:0 auto}
+  nav.side{position:sticky;top:0;align-self:start;height:100vh;overflow:auto;padding:22px 14px;border-right:1px solid var(--line)}
+  nav.side a{display:block;padding:6px 10px;border-radius:7px;color:var(--ink);font-size:13px}
+  nav.side a:hover{background:#eaf0fa;text-decoration:none}
+  nav.side .grp{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin:14px 10px 4px;font-weight:700}
+  main{padding:22px 26px}
+  .tools{display:flex;gap:12px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
+  .tools input{flex:1;min-width:220px;padding:9px 12px;border:1px solid var(--line);border-radius:9px;font-size:14px;background:#fff}
+  .legend{display:flex;gap:10px;font-size:12px;color:var(--muted);flex-wrap:wrap}
+  .badge{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;white-space:nowrap}
+  .b-ok{background:var(--ok-bg);color:var(--ok)}
+  .b-part{background:var(--part-bg);color:var(--part)}
+  .b-plan{background:var(--plan-bg);color:var(--plan)}
+  section.area{margin:26px 0 10px;scroll-margin-top:16px}
+  section.area>h2{font-size:17px;color:var(--navy);margin:0 0 4px;display:flex;align-items:center;gap:10px}
+  section.area>p.lead{margin:0 0 14px;color:var(--muted);font-size:13.5px;max-width:820px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px}
+  .item{background:var(--card);border:1px solid var(--line);border-radius:11px;padding:13px 15px;box-shadow:0 1px 2px rgba(20,40,80,.04)}
+  .item h3{margin:0 0 5px;font-size:14px;display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+  .item h3 .n{font-weight:650}
+  .item p{margin:0 0 6px;font-size:12.8px;color:#39435a}
+  .item .set{font-size:11.5px;color:var(--muted)}
+  .item .set code{background:#eef2f9;padding:1px 5px;border-radius:5px;font-size:11px;color:var(--blue)}
+  footer{max-width:1180px;margin:10px auto 40px;padding:16px 26px;color:var(--muted);font-size:12px;border-top:1px solid var(--line)}
+  .hidden{display:none!important}
+  @media(max-width:820px){.layout{grid-template-columns:1fr}nav.side{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line)}}
+</style>
+</head>
+<body>
+<header>
+  <div class="top">
+    <h1>VectraOne-Flow</h1>
+    <span class="tag">Configuration Reference</span>
+    <span class="tag">v0.1.0</span>
+  </div>
+  <p>Central index of everything an administrator can configure on a VectraOne-Flow
+     bandwidth-management node. Each entry is tagged with its current status so you
+     can see at a glance what ships today and what is on the roadmap.</p>
+</header>
+
+<div class="layout">
+  <nav class="side" id="sidenav"></nav>
+  <main>
+    <div class="tools">
+      <input id="filter" placeholder="Filter configuration topics… (e.g. pipe, DPI, RADIUS)"/>
+    </div>
+    <div class="legend">
+      <span><span class="badge b-ok">Available</span> shipping now</span>
+      <span><span class="badge b-part">Partial</span> basic support, expanding</span>
+      <span><span class="badge b-plan">Planned</span> on the roadmap</span>
+    </div>
+    <div id="areas"></div>
+  </main>
+</div>
+
+<footer>
+  VectraOne-Flow Configuration Reference — original documentation for the
+  VectraOne-Flow / PipeCore platform. Status tags reflect the current build and are
+  updated as features land.
+</footer>
+
+<script>
+// ---- Configuration model: areas -> items {name, status, desc, settings} ----
+const STATUS = {ok:"Available", part:"Partial", plan:"Planned"};
+const AREAS = [
+  {
+    id:"objects", title:"Objects & Inventory",
+    lead:"The reusable building blocks that policies reference: who and what is on the network.",
+    items:[
+      {n:"Customers", s:"ok", d:"Billing entities that own one or more IP groups. Track reference, name, contact and active state.", set:"API <code>/api/customers</code> · DB table <code>customers</code>"},
+      {n:"IP Groups (public IP / CIDR)", s:"ok", d:"A single public IP (/32) or a network group (CIDR) carrying subscriber traffic; assign each to a pipe.", set:"API <code>/api/ip-groups</code> · match by <code>u32</code> filter"},
+      {n:"Applications", s:"part", d:"Layer-7 application objects (YouTube, Netflix, BitTorrent…) used by application-based pipes. Today sourced from the classifier; a managed catalog is planned.", set:"via DPI verdict → <code>fwmark</code>"},
+      {n:"Protocols", s:"part", d:"Layer-3/4 protocol objects (TLS, QUIC, HTTP…) for protocol-based shaping.", set:"classifier label → policy"},
+      {n:"Schedules", s:"part", d:"Named time windows (day-of-week + time ranges) that drive time-based pipes.", set:"pipe <code>windows</code> (JSON)"},
+      {n:"Operator Users & Roles", s:"ok", d:"Login accounts with role ranks (viewer, operator, admin) governing what each can change.", set:"DB <code>users</code> · JWT RBAC"},
+    ]
+  },
+  {
+    id:"pipes", title:"Bandwidth Pipes & Policies",
+    lead:"The bandwidth packages the platform enforces, and how they compile to live shaping.",
+    items:[
+      {n:"Dedicated Internet Access", s:"ok", d:"100% guaranteed pipe — rate equals ceiling, no borrowing above the committed rate.", set:"HTB <code>rate==ceil</code> + CAKE"},
+      {n:"Contended pipes (1:2 … 1:20)", s:"ok", d:"Oversubscribed shared pipe: parent guaranteed at Σplans÷ratio, subscribers borrow up to their plan.", set:"nested HTB classes"},
+      {n:"Time-based shaping", s:"part", d:"Rate changes by time-of-day/day-of-week window; scheduler re-applies at each boundary.", set:"schedule swap (scheduler WIP)"},
+      {n:"Protocol-based shaping", s:"part", d:"Cap or prioritise a matched L3/L4 protocol via DPI fwmark. Compiler ready; live marking pending nDPI.", set:"<code>fw</code> filter → class"},
+      {n:"Application-based shaping", s:"part", d:"Cap or prioritise a matched L7 application. Compiler ready; depends on the DPI engine.", set:"<code>fw</code> filter → class"},
+      {n:"Policy compile & apply", s:"ok", d:"Turn the stored pipes + assignments into concrete tc/CAKE commands, preview them, and push to nodes.", set:"API <code>/api/policies/compile</code>·<code>/apply</code>"},
+      {n:"Priority & bufferbloat control", s:"ok", d:"Per-pipe HTB priority plus a CAKE leaf on every class to keep latency low under load.", set:"CAKE / fq_codel leaf"},
+    ]
+  },
+  {
+    id:"dpi", title:"Deep Packet Inspection",
+    lead:"Identifying the protocol and application behind each flow so policies can act on it.",
+    items:[
+      {n:"Classification engine", s:"plan", d:"Native nDPI binding recognising 450+ applications, incl. TLS/QUIC/SNI metadata for encrypted traffic. A port-based stub runs today.", set:"nDPI (LGPLv3) — Phase 2"},
+      {n:"Flow → fwmark fast path", s:"plan", d:"Inspect the first packets of a flow, cache the verdict in an eBPF map, and mark the rest in-kernel at line rate.", set:"eBPF flow map"},
+      {n:"Application catalog", s:"plan", d:"Browsable, updatable list of recognised applications and the signatures behind them.", set:"tracks upstream nDPI"},
+      {n:"Encrypted-traffic analysis", s:"plan", d:"Classify TLS 1.3 / QUIC via SNI and metadata where deep inspection isn't possible.", set:"nDPI ETA"},
+    ]
+  },
+  {
+    id:"reporting", title:"Reporting & Analytics",
+    lead:"Visibility into what is flowing, by every dimension, with exportable reports.",
+    items:[
+      {n:"Traffic dashboards", s:"ok", d:"Top usage by application, protocol, pipe, IP and customer, real-time and historical.", set:"API <code>/api/reports/top</code>"},
+      {n:"Downloadable reports", s:"ok", d:"On-demand CSV export of any report dimension; PDF/XLSX rendering planned.", set:"<code>/api/reports/download</code>"},
+      {n:"Scheduled reports", s:"plan", d:"Auto-generate and email reports on a recurring schedule.", set:"scheduler + SMTP"},
+      {n:"Flow store & retention", s:"ok", d:"High-ingest ClickHouse store with 1-minute rollups and configurable retention (TTL).", set:"ClickHouse <code>flows</code> / <code>flows_1m</code>"},
+      {n:"Alarms & thresholds", s:"plan", d:"Colour-coded alerts when pipes saturate or usage crosses a threshold.", set:"rules engine"},
+    ]
+  },
+  {
+    id:"licensing", title:"Licensing & Subscription",
+    lead:"Annual, per-node licensing bound to the server's Host ID. The system stops operating when the license expires until a new one is uploaded.",
+    items:[
+      {n:"Bandwidth-tier licensing", s:"ok", d:"Annual license per tier — 1G, 2.5G, 10G, 25G, 40G, 100G — each capping the node's total throughput and including Standard 24/7/365 6-hour support + all updates.", set:"Ed25519-signed key · GUI upload"},
+      {n:"DPI add-on", s:"ok", d:"Deep Packet Inspection is licensed separately via a flag in the license; DPI features refuse to run without it.", set:"license <code>dpi</code> flag"},
+      {n:"Host-ID binding & expiry", s:"ok", d:"Each license is signed for one Host ID and term; it cannot be forged, transferred or extended without the vendor's private key.", set:"<code>/api/license</code>"},
+      {n:"Enforcement (fail-closed)", s:"ok", d:"When unlicensed or expired, operational APIs return HTTP 402 and the node stops shaping; only login and license-upload stay open so an operator can recover.", set:"<code>require_license()</code>"},
+      {n:"Vendor issuing tool", s:"ok", d:"An offline tool only the vendor holds mints and renews customer licenses from the private key.", set:"<code>tools/issue_license.py</code>"},
+    ]
+  },
+  {
+    id:"system", title:"System Setup",
+    lead:"Node-level settings that make the box reachable, observable and licensed.",
+    items:[
+      {n:"Network interfaces & bridge", s:"part", d:"GUI to assign roles (bridge LAN/WAN, management, spare), static/DHCP addressing, gateway and port speed (1G/10G/25G/40G/100G), and form the transparent L2 bridge. Live apply lands with the appliance build.", set:"<code>/api/interfaces</code> · Interfaces page"},
+      {n:"Management IP / DNS", s:"part", d:"Out-of-band management address, gateway and DNS resolvers.", set:"OS network config"},
+      {n:"Date & time (NTP)", s:"part", d:"Clock and timezone — important for time-based pipes and report timestamps.", set:"systemd-timesyncd"},
+      {n:"SNMP & monitoring", s:"plan", d:"Expose device health and throughput counters to an external NMS.", set:"SNMP agent"},
+      {n:"Email / SMTP & alerts", s:"plan", d:"Outbound mail for scheduled reports and alarm notifications.", set:"SMTP relay"},
+      {n:"Licensing", s:"plan", d:"Per-node capacity / feature licensing and entitlement checks.", set:"license service"},
+    ]
+  },
+  {
+    id:"auth", title:"Users & Authentication",
+    lead:"Who can log in to manage the platform, and how they are verified.",
+    items:[
+      {n:"Local accounts", s:"ok", d:"Username/password accounts stored locally with bcrypt hashing.", set:"DB <code>users</code>"},
+      {n:"Role-based access control", s:"ok", d:"Three role ranks — viewer, operator, admin — enforced on every write endpoint.", set:"JWT + role guard"},
+      {n:"RADIUS authentication", s:"plan", d:"Delegate operator logins to a RADIUS server.", set:"pluggable auth router"},
+      {n:"OIDC / SSO", s:"plan", d:"Single sign-on via an OpenID Connect identity provider.", set:"OIDC"},
+      {n:"Audit log", s:"ok", d:"Every policy apply and sensitive action recorded with actor and timestamp.", set:"DB <code>audit_log</code>"},
+    ]
+  },
+  {
+    id:"deploy", title:"Deployment & High Availability",
+    lead:"How the node is installed in the network and kept from ever dropping the link.",
+    items:[
+      {n:"VM / appliance install", s:"ok", d:"Runs on commodity Linux; package as an OVA/qcow2 virtual appliance for KVM/ESXi.", set:"VM image"},
+      {n:"Bare-metal appliance (installer ISO)", s:"plan", d:"OPNsense-style self-installing image that lays down the OS + VectraOne-Flow onto a bare server, boots to a console + web setup. See docs/appliance-plan.md.", set:"Debian-based ISO"},
+      {n:"Inline transparent bridge", s:"plan", d:"Insert between upstream and the edge router at Layer-2 with no IP-hop change.", set:"L2 bridge"},
+      {n:"Fail-to-wire bypass", s:"plan", d:"Hardware bypass NIC shorts the two ports on power/software failure so traffic keeps flowing.", set:"bypass NIC"},
+      {n:"Active/standby HA", s:"plan", d:"A standby node takes over if the active one fails; tested failover.", set:"HA pair"},
+      {n:"Multi-node management", s:"part", d:"One control plane managing many data-plane nodes; API is multi-node aware.", set:"<code>PIPECORE_NODES</code>"},
+    ]
+  },
+  {
+    id:"maint", title:"Maintenance & Diagnostics",
+    lead:"Keeping the node healthy: backups, upgrades and troubleshooting tools.",
+    items:[
+      {n:"Configuration backup & restore", s:"part", d:"Export and re-import the full configuration (customers, pipes, assignments).", set:"DB dump / API"},
+      {n:"Software upgrade & rollback", s:"plan", d:"Apply a new build and roll back cleanly if needed.", set:"versioned deploy"},
+      {n:"Logs & log levels", s:"part", d:"Application and access logs with adjustable verbosity.", set:"uvicorn / journald"},
+      {n:"Live shaping inspection", s:"ok", d:"View the installed qdisc/class tree and per-class counters on a node.", set:"<code>tc -s class show</code>"},
+      {n:"Network tools", s:"plan", d:"Built-in ping, traceroute and packet capture for diagnostics.", set:"tools"},
+      {n:"Dry-run safety mode", s:"ok", d:"Compile and preview shaping without applying it to a live link.", set:"<code>PIPECORE_DRY_RUN</code>"},
+    ]
+  },
+];
+
+// ---- render ----
+const nav = document.getElementById("sidenav");
+const areasEl = document.getElementById("areas");
+const navHtml = ['<div class="grp">Areas</div>'];
+AREAS.forEach(a=>{
+  navHtml.push(`<a href="#${a.id}">${a.title}</a>`);
+  const items = a.items.map(it=>`
+    <div class="item" data-text="${(it.n+' '+it.d).toLowerCase()}">
+      <h3><span class="n">${it.n}</span><span class="badge b-${it.s}">${STATUS[it.s]}</span></h3>
+      <p>${it.d}</p>
+      <div class="set">${it.set}</div>
+    </div>`).join("");
+  const sec = document.createElement("section");
+  sec.className="area"; sec.id=a.id;
+  sec.innerHTML = `<h2>${a.title}</h2><p class="lead">${a.lead}</p><div class="grid">${items}</div>`;
+  areasEl.appendChild(sec);
+});
+nav.innerHTML = navHtml.join("");
+
+// ---- filter ----
+document.getElementById("filter").addEventListener("input", e=>{
+  const q = e.target.value.trim().toLowerCase();
+  document.querySelectorAll("section.area").forEach(sec=>{
+    let any=false;
+    sec.querySelectorAll(".item").forEach(it=>{
+      const hit = !q || it.dataset.text.includes(q);
+      it.classList.toggle("hidden", !hit);
+      if(hit) any=true;
+    });
+    sec.classList.toggle("hidden", !any);
+  });
+});
+</script>
+</body>
+</html>

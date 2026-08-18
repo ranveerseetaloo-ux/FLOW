@@ -1,0 +1,13 @@
+fastapi>=0.110
+uvicorn[standard]>=0.27
+python-multipart>=0.0.6            # required by the login form (OAuth2 password flow)
+SQLAlchemy>=2.0
+pydantic>=2.5
+pydantic-settings>=2.1
+python-jose[cryptography]>=3.3      # JWT auth
+cryptography>=41                    # Ed25519 license signing/verification
+passlib[bcrypt]>=1.7               # password hashing
+bcrypt>=4.0,<4.1                   # pinned: 4.1+ prints a harmless-but-scary passlib warning
+psycopg2-binary>=2.9               # PostgreSQL driver (prod)
+clickhouse-driver>=0.2             # reporting store
+httpx>=0.26                        # talking to data-plane nodes

@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+*.db
+.env
+.venv/
+node_modules/
+dist/
+
+# secrets & node-local runtime — never commit these
+vendor/*private*.key
+control-plane/interfaces.json

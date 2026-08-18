@@ -1,0 +1,46 @@
+{
+  "title": "PipeCore — ISP Traffic",
+  "uid": "pipecore-traffic",
+  "schemaVersion": 39,
+  "tags": ["pipecore", "isp", "bandwidth"],
+  "timezone": "browser",
+  "time": { "from": "now-24h", "to": "now" },
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "Total throughput (Gbps)",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 0 },
+      "datasource": { "type": "grafana-clickhouse-datasource", "uid": "clickhouse" },
+      "targets": [{
+        "rawSql": "SELECT minute AS t, sum(bytes)*8/60/1e9 AS gbps FROM pipecore.flows_1m WHERE minute > now()-INTERVAL 24 HOUR GROUP BY t ORDER BY t"
+      }]
+    },
+    {
+      "type": "barchart",
+      "title": "Top applications (by volume)",
+      "gridPos": { "h": 9, "w": 12, "x": 0, "y": 8 },
+      "datasource": { "type": "grafana-clickhouse-datasource", "uid": "clickhouse" },
+      "targets": [{
+        "rawSql": "SELECT application, sum(bytes)/1e9 AS gb FROM pipecore.flows_1m WHERE minute > now()-INTERVAL 24 HOUR GROUP BY application ORDER BY gb DESC LIMIT 10"
+      }]
+    },
+    {
+      "type": "piechart",
+      "title": "Traffic by protocol",
+      "gridPos": { "h": 9, "w": 12, "x": 12, "y": 8 },
+      "datasource": { "type": "grafana-clickhouse-datasource", "uid": "clickhouse" },
+      "targets": [{
+        "rawSql": "SELECT protocol, sum(bytes)/1e9 AS gb FROM pipecore.flows_1m WHERE minute > now()-INTERVAL 24 HOUR GROUP BY protocol ORDER BY gb DESC"
+      }]
+    },
+    {
+      "type": "table",
+      "title": "Top subscribers (by pipe)",
+      "gridPos": { "h": 9, "w": 24, "x": 0, "y": 17 },
+      "datasource": { "type": "grafana-clickhouse-datasource", "uid": "clickhouse" },
+      "targets": [{
+        "rawSql": "SELECT subscriber_ref, pipe_id, sum(bytes_down+bytes_up)/1e9 AS gb, count() AS flows FROM pipecore.flows WHERE ts > now()-INTERVAL 24 HOUR GROUP BY subscriber_ref, pipe_id ORDER BY gb DESC LIMIT 50"
+      }]
+    }
+  ]
+}
