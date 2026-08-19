@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>VectraOne-Flow — Console</title>
+<style>
+  :root{--navy:#1f3864;--blue:#2e5496;--accent:#3b7dd8;--bg:#eef1f6;--panel:#fff;
+    --line:#d7deea;--ink:#25303f;--muted:#6b7690;--head:#2b3a56;--ok:#2f8a57;--sidebar:#f4f6fb;}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--ink);font-size:13.5px}
+  a{color:var(--blue);text-decoration:none}
+  /* top bar */
+  .topbar{background:var(--head);color:#fff;display:flex;align-items:center;gap:18px;padding:0 16px;height:44px}
+  .topbar .brand{font-weight:700;letter-spacing:.3px}
+  .topbar .brand b{color:#8fb4ef}
+  .topbar .tabs{display:flex;gap:2px;height:100%}
+  .topbar .tabs a{color:#cdd8ee;padding:0 14px;display:flex;align-items:center;font-size:13px}
+  .topbar .tabs a.active,.topbar .tabs a:hover{background:#20293e;color:#fff}
+  .topbar .right{margin-left:auto;display:flex;align-items:center;gap:14px;font-size:12px;color:#aebbd6}
+  .chip{background:#33507e;color:#dfe8f6;padding:2px 8px;border-radius:4px;font-size:11px}
+  .chip.ok{background:#245c40;color:#c7f0d8}
+  /* layout */
+  .shell{display:grid;grid-template-columns:210px 1fr;min-height:calc(100vh - 44px)}
+  aside{background:var(--sidebar);border-right:1px solid var(--line);padding:14px 0}
+  aside .grp{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);font-weight:700;padding:12px 16px 4px}
+  aside a{display:block;padding:6px 16px 6px 22px;color:var(--ink);font-size:13px;border-left:3px solid transparent}
+  aside a:hover{background:#e7edf7}
+  aside a.active{background:#e2eafa;border-left-color:var(--accent);color:var(--navy);font-weight:600}
+  main{padding:18px 22px}
+  h1.page{font-size:18px;margin:0 0 2px;color:var(--navy)}
+  .sub{color:var(--muted);margin:0 0 16px;font-size:12.5px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:6px;margin-bottom:16px}
+  .panel .hd{background:#f6f8fc;border-bottom:1px solid var(--line);padding:9px 14px;font-weight:650;font-size:12.5px;color:var(--head);border-radius:6px 6px 0 0;display:flex;align-items:center;gap:10px}
+  .panel .bd{padding:14px}
+  table{width:100%;border-collapse:collapse}
+  th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);font-size:13px}
+  th{background:#fafbfe;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.4px}
+  tr:hover td{background:#f7faff}
+  .form{display:grid;grid-template-columns:170px 1fr 170px 1fr;gap:12px 14px;align-items:center}
+  .form label{color:var(--muted);font-size:12.5px}
+  .form .full{grid-column:2/5}
+  input,select{padding:7px 9px;border:1px solid var(--line);border-radius:5px;font-size:13px;background:#fff;width:100%}
+  input[type=checkbox]{width:auto}
+  .rules{margin-top:6px}
+  .rules th,.rules td{padding:6px 8px}
+  .rules select,.rules input{padding:5px 7px;font-size:12.5px}
+  .btn{background:var(--blue);color:#fff;border:0;padding:8px 16px;border-radius:5px;font-size:13px;cursor:pointer}
+  .btn:hover{background:var(--accent)}
+  .btn.ghost{background:#e7edf7;color:var(--blue)}
+  .btn.sm{padding:4px 10px;font-size:12px}
+  .bar{display:flex;gap:10px;margin-top:14px}
+  .pill{font-size:11px;padding:2px 8px;border-radius:20px;background:#eaf0fa;color:var(--blue);font-weight:600}
+  .msg{font-size:12.5px;margin-top:10px}.msg.ok{color:var(--ok)}.msg.bad{color:#c0392b}
+  .hidden{display:none!important}
+  .loginwrap{max-width:320px;margin:70px auto;background:#fff;border:1px solid var(--line);border-radius:8px;padding:22px}
+  .loginwrap h2{margin:0 0 14px;font-size:16px;color:var(--navy)}
+  .loginwrap input{margin-bottom:10px}
+  .muted{color:var(--muted)}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="brand">Vectra<b>One</b>-Flow</span>
+  <div class="tabs">
+    <a class="active">Configuration</a>
+    <a href="index.html">Dashboard</a>
+    <a href="config-reference.html">Docs</a>
+  </div>
+  <div class="right">
+    <span>Health <span class="chip ok" id="health">OK</span></span>
+    <span id="lic" class="chip">license…</span>
+    <span id="who">not signed in</span>
+  </div>
+</div>
+
+<!-- login gate -->
+<div id="login" class="loginwrap">
+  <h2>Sign in</h2>
+  <input id="u" placeholder="username" value="admin"/>
+  <input id="p" type="password" placeholder="password"/>
+  <button class="btn" onclick="login()">Sign in</button>
+  <p class="msg bad" id="lerr"></p>
+</div>
+
+<!-- console -->
+<div id="app" class="shell hidden">
+  <aside>
+    <div class="grp">Traffic Policies</div>
+    <a data-page="policies" class="active">Policies</a>
+    <a data-page="reporting">Monitor / Reports</a>
+    <div class="grp">Objects</div>
+    <a data-page="ipgroups">Networks / IP Groups</a>
+    <a data-page="customers">Customers</a>
+    <a href="config-reference.html#objects">Applications</a>
+    <a href="config-reference.html#objects">Protocols</a>
+    <a href="config-reference.html#objects">Schedules</a>
+    <div class="grp">System</div>
+    <a href="interfaces.html">Interfaces / Network</a>
+    <a href="license.html">Licensing</a>
+    <a href="config-reference.html">Configuration Reference</a>
+  </aside>
+
+  <main id="view"><!-- rendered per page --></main>
+</div>
+
+<script>
+const API_BASE = "http://197.242.184.113:8000";      // your server; "" if served by backend
+const API = (API_BASE || location.origin) + "/api";
+let TOKEN=null, PAGE="policies", PIPES=[], GROUPS=[], CUSTOMERS=[];
+const h = ()=>({ "Authorization":"Bearer "+TOKEN });
+const hj = ()=>({ "Authorization":"Bearer "+TOKEN, "Content-Type":"application/json" });
+
+async function login(){
+  const body=new URLSearchParams({username:u.value,password:p.value});
+  const r=await fetch(API+"/auth/token",{method:"POST",body});
+  if(!r.ok){ lerr.textContent="Login failed"; return; }
+  TOKEN=(await r.json()).access_token;
+  document.getElementById("login").classList.add("hidden");
+  document.getElementById("app").classList.remove("hidden");
+  document.getElementById("who").textContent="admin ▾";
+  loadLicenseChip(); route("policies");
+}
+async function loadLicenseChip(){
+  try{ const d=await (await fetch(API+"/license")).json();
+    const c=document.getElementById("lic");
+    c.textContent = d.licensed ? (d.tier+" · licensed") : "UNLICENSED";
+    c.className = "chip "+(d.licensed?"ok":"");
+  }catch(e){}
+}
+
+// ---- routing ----
+document.querySelectorAll("aside a[data-page]").forEach(a=>{
+  a.addEventListener("click",e=>{e.preventDefault();route(a.dataset.page);});
+});
+function route(page){
+  PAGE=page;
+  document.querySelectorAll("aside a[data-page]").forEach(a=>a.classList.toggle("active",a.dataset.page===page));
+  ({policies:pagePolicies, ipgroups:pageIPGroups, customers:pageCustomers, reporting:pageReports}[page]||pagePolicies)();
+}
+
+// ---- data helpers ----
+async function refresh(){
+  [PIPES,GROUPS,CUSTOMERS] = await Promise.all([
+    fetch(API+"/pipes",{headers:h()}).then(r=>r.json()),
+    fetch(API+"/ip-groups",{headers:h()}).then(r=>r.json()),
+    fetch(API+"/customers",{headers:h()}).then(r=>r.json()),
+  ]);
+}
+
+// ========== POLICIES (the Exinda-style editor) ==========
+async function pagePolicies(){
+  await refresh();
+  const V=document.getElementById("view");
+  const rows = PIPES.map(p=>`<tr>
+      <td>${p.name}</td><td><span class="pill">${p.ptype}</span></td>
+      <td>${p.download_mbps||'-'}</td><td>${p.upload_mbps||'-'}</td>
+      <td>${p.contention_ratio>1?('1:'+p.contention_ratio):'—'}</td>
+      <td>prio ${p.priority}</td>
+      <td><button class="btn sm ghost" onclick="editPolicy(${p.id})">View</button></td>
+    </tr>`).join("");
+  V.innerHTML = `
+    <h1 class="page">Policy</h1>
+    <p class="sub">Policies define the traffic to match and the bandwidth action to take on it.</p>
+    <div class="panel">
+      <div class="hd">Policies <span class="pill">${PIPES.length}</span>
+        <button class="btn sm" style="margin-left:auto" onclick="editPolicy(0)">+ New Policy</button></div>
+      <div class="bd" style="padding:0">
+        <table><thead><tr><th>Policy Name</th><th>Type</th><th>Down Mbps</th><th>Up Mbps</th><th>Contention</th><th>Priority</th><th></th></tr></thead>
+        <tbody>${rows||'<tr><td colspan=7 class="muted" style="padding:14px">No policies yet.</td></tr>'}</tbody></table>
+      </div>
+    </div>
+    <div id="editor"></div>`;
+}
+
+function editPolicy(id){
+  const p = PIPES.find(x=>x.id===id) || {name:"",ptype:"dedicated",download_mbps:100,upload_mbps:20,contention_ratio:4,priority:3,match_label:"",fwmark:16};
+  const grpOpts = ['<option value="">— none —</option>'].concat(
+    GROUPS.map(g=>`<option value="${g.id}">${g.cidr} (${g.label||g.customer_id})</option>`)).join("");
+  const typeOpt = t=>`<option value="${t}" ${p.ptype===t?'selected':''}>${t}</option>`;
+  document.getElementById("editor").innerHTML = `
+    <div class="panel">
+      <div class="hd">Edit Policy ${id?('#'+id):'(new)'}</div>
+      <div class="bd">
+        <div class="form">
+          <label>Policy Name</label><input id="f_name" value="${p.name}" class="full"/>
+          <label>Type / Action</label>
+          <select id="f_type" onchange="typeChanged()">
+            ${typeOpt('dedicated')}${typeOpt('contended')}${typeOpt('time_based')}${typeOpt('protocol')}${typeOpt('application')}
+          </select>
+          <label>Priority</label>
+          <select id="f_prio">${[0,1,2,3,4,5,6,7].map(n=>`<option ${p.priority===n?'selected':''}>${n}</option>`).join("")}</select>
+
+          <label>Guaranteed / Rate (Down Mbps)</label><input id="f_down" type="number" value="${p.download_mbps||0}"/>
+          <label>Rate (Up Mbps)</label><input id="f_up" type="number" value="${p.upload_mbps||0}"/>
+
+          <label id="l_ratio">Contention ratio (1:N)</label>
+          <select id="f_ratio">${[1,2,4,8,10,20].map(n=>`<option ${p.contention_ratio===n?'selected':''}>${n}</option>`).join("")}</select>
+          <label id="l_match">Application / Protocol</label><input id="f_match" value="${p.match_label||''}" placeholder="e.g. bittorrent"/>
+        </div>
+
+        <div class="panel rules" style="margin-top:16px">
+          <div class="hd">Filter Rules</div>
+          <div class="bd" style="padding:0">
+            <table><thead><tr><th>Direction</th><th>Network / IP Group (Host)</th><th>Application</th><th>DSCP</th></tr></thead>
+            <tbody><tr>
+              <td><select id="r_dir"><option value="download">download</option><option value="upload">upload</option><option value="both">both</option></select></td>
+              <td><select id="r_group">${grpOpts}</select></td>
+              <td><input id="r_app" value="${p.match_label||''}" placeholder="ALL"/></td>
+              <td><select id="r_dscp"><option>ALL</option><option>EF</option><option>AF41</option><option>CS1</option></select></td>
+            </tr></tbody></table>
+          </div>
+        </div>
+
+        <div class="bar">
+          <button class="btn" onclick="savePolicy(${id})">Apply Changes</button>
+          <button class="btn ghost" onclick="document.getElementById('editor').innerHTML=''">Cancel</button>
+        </div>
+        <div id="pmsg" class="msg"></div>
+      </div>
+    </div>`;
+  typeChanged();
+}
+
+function typeChanged(){
+  const t=document.getElementById("f_type").value;
+  document.getElementById("l_ratio").style.visibility = t==="contended"?"visible":"hidden";
+  document.getElementById("f_ratio").style.visibility = t==="contended"?"visible":"hidden";
+  const marky = (t==="protocol"||t==="application");
+  document.getElementById("l_match").style.visibility = marky?"visible":"hidden";
+  document.getElementById("f_match").style.visibility = marky?"visible":"hidden";
+}
+
+async function savePolicy(id){
+  const msg=document.getElementById("pmsg"); msg.textContent="";
+  const t=document.getElementById("f_type").value;
+  const marky=(t==="protocol"||t==="application");
+  const body={
+    name:document.getElementById("f_name").value.trim(),
+    ptype:t,
+    download_mbps:parseFloat(document.getElementById("f_down").value)||0,
+    upload_mbps:parseFloat(document.getElementById("f_up").value)||0,
+    contention_ratio:parseInt(document.getElementById("f_ratio").value)||1,
+    priority:parseInt(document.getElementById("f_prio").value)||3,
+    match_label: marky ? (document.getElementById("f_match").value.trim()||null) : null,
+    fwmark: marky ? 16 : null,
+  };
+  if(!body.name){ msg.className="msg bad"; msg.textContent="Policy name is required."; return; }
+  try{
+    const r=await fetch(API+"/pipes",{method:"POST",headers:hj(),body:JSON.stringify(body)});
+    const d=await r.json();
+    if(!r.ok){ msg.className="msg bad"; msg.textContent="Error: "+(d.detail||"could not save"); return; }
+    // optional: assign the chosen IP group to this new pipe (the "Host" filter)
+    const gid=document.getElementById("r_group").value;
+    if(gid){ await fetch(`${API}/ip-groups/${gid}/assign/${d.id}`,{method:"PATCH",headers:h()}); }
+    msg.className="msg ok"; msg.textContent="Policy applied ✔";
+    pagePolicies();
+  }catch(e){ msg.className="msg bad"; msg.textContent="Error: "+e; }
+}
+
+// ========== OBJECTS: IP GROUPS ==========
+async function pageIPGroups(){
+  await refresh();
+  const pipeName=id=>{const p=PIPES.find(x=>x.id===id);return p?p.name:'<span class="muted">unassigned</span>';};
+  const rows=GROUPS.map(g=>`<tr><td>${g.cidr}</td><td>${g.label||''}</td><td>${g.customer_id}</td><td>${pipeName(g.pipe_id)}</td></tr>`).join("");
+  const custOpts=CUSTOMERS.map(c=>`<option value="${c.id}">${c.name}</option>`).join("");
+  document.getElementById("view").innerHTML=`
+    <h1 class="page">Networks / IP Groups</h1>
+    <p class="sub">Public IPs and CIDR groups that carry subscriber traffic.</p>
+    <div class="panel"><div class="hd">Add IP Group</div><div class="bd">
+      <div class="form">
+        <label>Customer</label><select id="g_cust">${custOpts}</select>
+        <label>CIDR</label><input id="g_cidr" placeholder="203.0.113.7/32"/>
+        <label>Label</label><input id="g_label" placeholder="home7"/>
+        <label>Plan Down / Up Mbps</label><span style="display:flex;gap:6px"><input id="g_down" type="number" placeholder="down"/><input id="g_up" type="number" placeholder="up"/></span>
+      </div>
+      <div class="bar"><button class="btn" onclick="addGroup()">Add</button></div>
+      <div id="gmsg" class="msg"></div>
+    </div></div>
+    <div class="panel"><div class="hd">IP Groups <span class="pill">${GROUPS.length}</span></div><div class="bd" style="padding:0">
+      <table><thead><tr><th>CIDR</th><th>Label</th><th>Customer</th><th>Policy</th></tr></thead><tbody>${rows||''}</tbody></table>
+    </div></div>`;
+}
+async function addGroup(){
+  const msg=document.getElementById("gmsg");msg.textContent="";
+  const body={customer_id:parseInt(g_cust.value),cidr:g_cidr.value.trim(),label:g_label.value.trim(),
+    download_mbps:parseFloat(g_down.value)||0,upload_mbps:parseFloat(g_up.value)||0};
+  const r=await fetch(API+"/ip-groups",{method:"POST",headers:hj(),body:JSON.stringify(body)});
+  const d=await r.json();
+  if(!r.ok){msg.className="msg bad";msg.textContent="Error: "+(d.detail||"failed");return;}
+  pageIPGroups();
+}
+
+// ========== OBJECTS: CUSTOMERS ==========
+async function pageCustomers(){
+  await refresh();
+  const rows=CUSTOMERS.map(c=>`<tr><td>${c.ref}</td><td>${c.name}</td><td>${c.contact_email||''}</td><td>${c.active?'active':'—'}</td></tr>`).join("");
+  document.getElementById("view").innerHTML=`
+    <h1 class="page">Customers</h1><p class="sub">Billing entities that own IP groups.</p>
+    <div class="panel"><div class="hd">Add Customer</div><div class="bd">
+      <div class="form">
+        <label>Reference</label><input id="c_ref" placeholder="acme"/>
+        <label>Name</label><input id="c_name" placeholder="Acme Ltd"/>
+        <label>Email</label><input id="c_email" placeholder="noc@acme.example" class="full"/>
+      </div>
+      <div class="bar"><button class="btn" onclick="addCustomer()">Add</button></div>
+      <div id="cmsg" class="msg"></div>
+    </div></div>
+    <div class="panel"><div class="hd">Customers <span class="pill">${CUSTOMERS.length}</span></div><div class="bd" style="padding:0">
+      <table><thead><tr><th>Ref</th><th>Name</th><th>Email</th><th>Status</th></tr></thead><tbody>${rows||''}</tbody></table>
+    </div></div>`;
+}
+async function addCustomer(){
+  const msg=document.getElementById("cmsg");msg.textContent="";
+  const body={ref:c_ref.value.trim(),name:c_name.value.trim(),contact_email:c_email.value.trim()};
+  const r=await fetch(API+"/customers",{method:"POST",headers:hj(),body:JSON.stringify(body)});
+  const d=await r.json();
+  if(!r.ok){msg.className="msg bad";msg.textContent="Error: "+(d.detail||"failed");return;}
+  pageCustomers();
+}
+
+// ========== MONITOR / REPORTS ==========
+async function pageReports(){
+  const d=await (await fetch(API+"/reports/top?dimension=application",{headers:h()})).json();
+  const max=Math.max(...d.rows.map(r=>r.bytes),1);
+  const rows=d.rows.map(r=>`<tr><td>${r.key}</td><td>${(r.bytes/1e9).toFixed(2)} GB</td>
+     <td style="width:45%"><div style="height:14px;background:#3b7dd8;border-radius:3px;width:${Math.round(100*r.bytes/max)}%"></div></td>
+     <td>${r.flows.toLocaleString()}</td></tr>`).join("");
+  document.getElementById("view").innerHTML=`
+    <h1 class="page">Monitor — Traffic by Application</h1><p class="sub">Source: ${d.source}</p>
+    <div class="panel"><div class="hd">Top Applications</div><div class="bd" style="padding:0">
+      <table><thead><tr><th>Application</th><th>Volume</th><th>Share</th><th>Flows</th></tr></thead><tbody>${rows}</tbody></table>
+    </div></div>`;
+}
+</script>
+</body>
+</html>

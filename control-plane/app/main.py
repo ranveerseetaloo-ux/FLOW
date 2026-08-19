@@ -60,6 +60,6 @@ _UI_DIR = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "..", "
 if os.path.isdir(_UI_DIR):
     @app.get("/")
     def index() -> FileResponse:
-        return FileResponse(os.path.join(_UI_DIR, "index.html"))
+        return FileResponse(os.path.join(_UI_DIR, "console.html"))
 
     app.mount("/ui", StaticFiles(directory=_UI_DIR, html=True), name="ui")
