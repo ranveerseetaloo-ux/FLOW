@@ -19,7 +19,7 @@ from .db import SessionLocal, init_db
 from .seed import seed
 from .core.licensing import require_license
 from .api import (auth, customers, ip_groups, pipes, policies, reports,
-                  license_api, interfaces_api)
+                  license_api, interfaces_api, system_api)
 
 app = FastAPI(
     title="PipeCore — Bandwidth Management Control Plane",
@@ -33,7 +33,7 @@ app.add_middleware(
 
 # Always-open routers so an operator can recover a node (log in, see status,
 # upload a fresh license) even when unlicensed or expired.
-for r in (auth.router, license_api.router):
+for r in (auth.router, license_api.router, system_api.router):
     app.include_router(r, prefix="/api")
 
 # Operational routers — blocked with HTTP 402 when there is no valid license.
@@ -61,5 +61,9 @@ if os.path.isdir(_UI_DIR):
     @app.get("/")
     def index() -> FileResponse:
         return FileResponse(os.path.join(_UI_DIR, "console.html"))
+
+    @app.get("/dashboard")
+    def dashboard() -> FileResponse:
+        return FileResponse(os.path.join(_UI_DIR, "index.html"))
 
     app.mount("/ui", StaticFiles(directory=_UI_DIR, html=True), name="ui")
