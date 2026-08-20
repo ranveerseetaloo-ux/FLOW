@@ -26,6 +26,19 @@
   aside a.active{background:#e2eafa;border-left-color:var(--accent);color:var(--navy);font-weight:600}
   aside a .dot{width:6px;height:6px;border-radius:50%;background:#c7d0e0;flex:0 0 auto}
   aside a .dot.ok{background:var(--ok)}aside a .dot.part{background:var(--warn)}
+  /* collapsible groups */
+  .gwrap{border-bottom:1px solid #e6ebf4}
+  .ghdr{display:flex;align-items:center;gap:9px;padding:10px 14px;cursor:pointer;font-size:11.5px;text-transform:uppercase;
+    letter-spacing:.5px;color:var(--head);font-weight:700;user-select:none}
+  .ghdr:hover{background:#e7edf7}
+  .ghdr .gi{width:16px;text-align:center;color:var(--blue);font-size:13px}
+  .ghdr .gt{flex:1}
+  .ghdr .gcount{background:#dde5f2;color:var(--muted);font-size:10px;padding:1px 6px;border-radius:10px;font-weight:700}
+  .ghdr .chev{color:var(--muted);font-size:10px;transition:transform .15s}
+  .gwrap.open .ghdr{background:#e9eefa;color:var(--navy)}
+  .gwrap.open .ghdr .chev{transform:rotate(90deg)}
+  .gitems{display:none;padding:2px 0 6px}
+  .gwrap.open .gitems{display:block}
   main{padding:18px 22px;min-height:calc(100vh - 44px)}
   h1.page{font-size:18px;margin:0 0 2px;color:var(--navy)}
   .crumb{color:var(--muted);font-size:11.5px;margin:0 0 10px}
@@ -103,11 +116,18 @@ const V=()=>document.getElementById("view");
 
 // ---------- MENU (original labels + descriptions; status: ok|part|plan) ----------
 const MENU=[
- {group:"Traffic Policies", items:[
+ {group:"Traffic Policies", icon:"◈", items:[
    {k:"policies", label:"Policies", fn:"policies", s:"ok"},
-   {k:"reports", label:"Monitor / Reports", fn:"reports", s:"ok"},
  ]},
- {group:"Object Definitions", items:[
+ {group:"Reports", icon:"▤", items:[
+   {k:"reports", label:"Traffic Report", fn:"reports", s:"ok"},
+   {k:"appreport", label:"Applications Report", fn:"reports", s:"ok"},
+   {k:"usersreport", label:"Users Report", s:"plan", d:"Top internal/external users by volume."},
+   {k:"rthosts", label:"Hosts & Users (Real-Time)", s:"plan", d:"Live view of active hosts and their throughput."},
+   {k:"rtconv", label:"Conversations (Real-Time)", s:"plan", d:"Live per-flow conversations crossing the bridge."},
+   {k:"subnet", label:"Subnet / Network-Object Report", s:"plan", d:"Traffic charted in/out of each network object."},
+ ]},
+ {group:"Object Definitions", icon:"⬡", items:[
    {k:"netobj", label:"Network Objects", fn:"ipgroups", s:"ok"},
    {k:"customers", label:"Customers", fn:"customers", s:"ok"},
    {k:"dynobj", label:"Dynamic Network Objects", s:"plan", d:"Auto-maintained network objects populated by adaptive-response and directory sync."},
@@ -123,21 +143,17 @@ const MENU=[
    {k:"aps", label:"Application Performance Score", s:"plan", d:"Score application health (latency/loss/jitter) per app."},
    {k:"sla", label:"Site SLAs", s:"plan", d:"Track per-site latency/availability against a service-level target."},
  ]},
- {group:"Network Settings", items:[
+ {group:"Network Settings", icon:"⇄", items:[
    {k:"nics", label:"Interfaces / NIC Settings", fn:"interfaces", s:"ok"},
    {k:"routes", label:"Routes", fn:"routes", s:"ok"},
    {k:"dns", label:"DNS & Domain", fn:"dns", s:"ok"},
-   {k:"appreport", label:"Applications Report", fn:"reports", s:"ok"},
    {k:"httpproxy", label:"HTTP Proxy", s:"plan", d:"Upstream HTTP proxy for the node's own outbound requests."},
    {k:"email", label:"Email / SMTP", s:"plan", d:"Outbound mail relay for scheduled reports and alerts."},
    {k:"snmp", label:"SNMP", s:"plan", d:"Expose device health and throughput counters to an NMS."},
-   {k:"usersreport", label:"Users Report", s:"plan", d:"Top internal/external users by volume."},
-   {k:"rthosts", label:"Hosts & Users (Real-Time)", s:"plan", d:"Live view of active hosts and their throughput."},
-   {k:"rtconv", label:"Conversations (Real-Time)", s:"plan", d:"Live per-flow conversations crossing the bridge."},
    {k:"optusers", label:"Optimize by Users/Groups", s:"plan", d:"Apply policy keyed on user or group identity."},
    {k:"ipmi", label:"IPMI", s:"plan", d:"Out-of-band hardware management (BMC) configuration."},
  ]},
- {group:"System Set-up", items:[
+ {group:"System Set-up", icon:"⚙", items:[
    {k:"datetime", label:"Date & Time", fn:"datetime", s:"ok"},
    {k:"license", label:"Licensing", fn:"license", s:"ok"},
    {k:"uiaccess", label:"UI Access", s:"plan", d:"Restrict the management UI by address, port and TLS."},
@@ -150,7 +166,7 @@ const MENU=[
    {k:"control", label:"Cluster Control", s:"plan", d:"Roles and coordination for a multi-node cluster."},
    {k:"disk", label:"Service Disk Allocation", s:"plan", d:"Allocate disk between reporting, cache and logs."},
  ]},
- {group:"Optimization", items:[
+ {group:"Optimization", icon:"⚡", items:[
    {k:"optsvc", label:"Services", s:"plan", d:"Enable/disable the acceleration and optimisation services."},
    {k:"community", label:"Appliance Cluster", s:"plan", d:"Peer appliances for accelerated site-to-site links."},
    {k:"tcpacc", label:"TCP Acceleration", s:"plan", d:"Improve throughput on high-latency links via TCP optimisation."},
@@ -160,11 +176,11 @@ const MENU=[
    {k:"edgecache", label:"Edge Cache", s:"plan", d:"Cache popular web/video objects at the edge."},
    {k:"prepop", label:"Cache Pre-population", s:"plan", d:"Warm the edge cache with selected content ahead of demand."},
  ]},
- {group:"Certificates", items:[
+ {group:"Certificates", icon:"▦", items:[
    {k:"certmgr", label:"Manage Certificates & CA", s:"plan", d:"Upload, generate and manage TLS certificates and CA chains."},
    {k:"certview", label:"Certificates & Keys", s:"plan", d:"View installed certificates and private keys."},
  ]},
- {group:"Authentication", items:[
+ {group:"Authentication", icon:"⚿", items:[
    {k:"localusers", label:"Local User Accounts", s:"part", d:"Operator accounts with roles (viewer/operator/admin). RBAC enforced now; management UI pending."},
    {k:"activeusers", label:"Active Users", s:"plan", d:"Operators currently signed in."},
    {k:"aaa", label:"AAA", s:"plan", d:"Authentication/authorisation/accounting policy."},
@@ -172,12 +188,12 @@ const MENU=[
    {k:"radius", label:"RADIUS", s:"plan", d:"Authenticate operators against a RADIUS server."},
    {k:"tacacs", label:"TACACS+", s:"plan", d:"Authenticate operators against a TACACS+ server."},
  ]},
- {group:"System Logging", items:[
+ {group:"System Logging", icon:"▣", items:[
    {k:"logview", label:"View Log Files", fn:"logs", s:"ok"},
    {k:"livelog", label:"Live Log", fn:"logs", s:"ok"},
    {k:"logcfg", label:"Logging Configuration", s:"plan", d:"Log levels, rotation and remote syslog servers."},
  ]},
- {group:"System Diagnostics", items:[
+ {group:"System Diagnostics", icon:"✚", items:[
    {k:"sysinfo", label:"System Info", fn:"sysinfo", s:"ok"},
    {k:"nicdiag", label:"NIC Diagnostics", fn:"interfaces", s:"ok"},
    {k:"alertstat", label:"Alert Status", s:"plan", d:"Current state of configured alerts."},
@@ -186,7 +202,7 @@ const MENU=[
    {k:"raid", label:"RAID Diagnostics", s:"plan", d:"Health of the disk array."},
    {k:"logcase", label:"Log a Support Case", s:"plan", d:"Open a support case with diagnostics attached."},
  ]},
- {group:"Maintenance", items:[
+ {group:"Maintenance", icon:"⛭", items:[
    {k:"cfgmgr", label:"Manage Configuration", s:"plan", d:"Save, export and restore configuration snapshots."},
    {k:"cfgimport", label:"Import Configuration", s:"plan", d:"Load a configuration from a file."},
    {k:"update", label:"Install Update", s:"plan", d:"Apply a new software build."},
@@ -194,7 +210,7 @@ const MENU=[
    {k:"factory", label:"Factory Defaults", s:"plan", d:"Reset the node to factory configuration."},
    {k:"reboot", label:"Reboot / Shutdown", s:"plan", d:"Reboot, auto-reboot watchdog, or shut the node down."},
  ]},
- {group:"Tools", items:[
+ {group:"Tools", icon:"⚒", items:[
    {k:"ping", label:"Ping", fn:"tools", tool:"ping", s:"ok"},
    {k:"traceroute", label:"Traceroute", fn:"tools", tool:"traceroute", s:"ok"},
    {k:"dnslookup", label:"DNS Lookup", fn:"tools", tool:"dnslookup", s:"ok"},
@@ -202,7 +218,7 @@ const MENU=[
    {k:"iperfs", label:"Iperf Server", fn:"tools", tool:"iperf_server", s:"ok"},
    {k:"cli", label:"Command Line (CLI)", s:"plan", d:"Web terminal to the node CLI."},
  ]},
- {group:"Virtualization", items:[
+ {group:"Virtualization", icon:"▢", items:[
    {k:"virt", label:"Virtualization", s:"plan", d:"Run guest VMs / service containers on the appliance."},
  ]},
 ];
@@ -231,9 +247,14 @@ async function licenseChip(){
 let CUR=null;
 function buildNav(){
   const nav=document.getElementById("nav");
-  nav.innerHTML=MENU.map(g=>`<div class="grp">${g.group}</div>`+
-    g.items.map(it=>`<a data-k="${it.k}"><span>${it.label}</span><span class="dot ${it.s==='ok'?'ok':it.s==='part'?'part':''}"></span></a>`).join("")
-  ).join("");
+  nav.innerHTML=MENU.map((g,gi)=>`
+    <div class="gwrap" data-gi="${gi}">
+      <div class="ghdr"><span class="gi">${g.icon||'▸'}</span><span class="gt">${g.group}</span>
+        <span class="gcount">${g.items.length}</span><span class="chev">▸</span></div>
+      <div class="gitems">${g.items.map(it=>
+        `<a data-k="${it.k}"><span>${it.label}</span><span class="dot ${it.s==='ok'?'ok':it.s==='part'?'part':''}"></span></a>`).join("")}</div>
+    </div>`).join("");
+  nav.querySelectorAll(".ghdr").forEach(hd=>hd.addEventListener("click",()=>hd.parentElement.classList.toggle("open")));
   nav.querySelectorAll("a[data-k]").forEach(a=>a.addEventListener("click",()=>{
     const it=MENU.flatMap(g=>g.items).find(x=>x.k===a.dataset.k); openItem(it);
   }));
@@ -241,7 +262,9 @@ function buildNav(){
 function openItem(it){
   CUR=it;
   document.querySelectorAll("#nav a[data-k]").forEach(a=>a.classList.toggle("active",a.dataset.k===it.k));
-  const grp=MENU.find(g=>g.items.includes(it)).group;
+  const gi=MENU.findIndex(g=>g.items.includes(it));
+  const wrap=document.querySelector(`.gwrap[data-gi="${gi}"]`); if(wrap) wrap.classList.add("open");
+  const grp=MENU[gi].group;
   const FN={policies:pagePolicies,reports:pageReports,ipgroups:pageIPGroups,customers:pageCustomers,
     interfaces:pageInterfaces,license:pageLicense,routes:pageRoutes,dns:pageDNS,datetime:pageDatetime,
     logs:pageLogs,sysinfo:pageSysinfo,tools:()=>pageTools(it)};
